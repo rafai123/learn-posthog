@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { PHProvider } from "@/app/posthog-provider";
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -37,7 +38,9 @@ export default function RootLayout({
           >
           <PHProvider>
             <PostHogPageView />
+            <Suspense fallback={<div>Loading</div>}>
             {children}
+            </Suspense>
           </PHProvider>
         </body>
     </html>
