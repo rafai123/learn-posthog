@@ -44,7 +44,7 @@ export default function Home() {
     }
 
     trackAdVisit()
-  }, [pathName, searchParams])
+  }, [pathName, searchParams, utm_source, utm_medium, utm_campaign, utm_term])
 
   const handleCheckout = (price: number) => {
     const prompt = window.confirm(`Are you sure you want to checkout this course for $${price}?`)
