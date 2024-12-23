@@ -49,11 +49,12 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   // Format output menjadi text/plain untuk response asli
-  const formattedResponse = Object.entries(data)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('\n');
+  // const formattedResponse = Object.entries(data)
+  //   .map(([key, value]) => `${key}=${value}`)
+  //   .join('\n');
 
-  return new Response(formattedResponse, {
+
+  return new Response(JSON.stringify(data), {
     headers: { 'Content-Type': 'text/plain' },
   });
 }
