@@ -3,23 +3,20 @@ export async function GET(request: Request): Promise<Response> {
     request.headers.get('x-forwarded-for') || 
     request.headers.get('host') || 
     'unknown';
-  
-  // Dapatkan IP pengguna dari request
+
   const ipAddress = ip.split(',')[0]; // Handle jika ada proxy atau beberapa IP
 
-  // Gunakan layanan GeoIP eksternal untuk mendapatkan lokasi berdasarkan IP
+  // Ambil data GeoIP dari layanan eksternal
   const geoIpResponse = await fetch(`https://ipinfo.io/${ipAddress}?token=bc764156993d7f`);
-  
   if (!geoIpResponse.ok) {
     return new Response('Error fetching GeoIP data', { status: 500 });
   }
-  
+
   const geoData = await geoIpResponse.json();
 
   // Ambil data GeoIP
   const { city, region, country, loc } = geoData;
-  
-  // Format response yang ingin ditampilkan
+
   const data = {
     ip: ipAddress,
     city: city || 'unknown',
@@ -32,12 +29,30 @@ export async function GET(request: Request): Promise<Response> {
     method: 'GET',
   };
 
-  // Format output menjadi text/plain
+  // Kirim data ke PostHog
+  const postHogResponse = await fetch('https://app.posthog.com/capture/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      api_key: 'phc_sU6rMQbWW9Gudy3d1Pne8nZpK6pHh0vEK4u26RwGqTy', // Ganti dengan API Key PostHog Anda
+      event: 'geoip_event', // Nama event yang Anda tentukan
+      properties: {
+        ...data, // Masukkan seluruh properti GeoIP
+      },
+    }),
+  });
+
+  if (!postHogResponse.ok) {
+    console.error('Error sending data to PostHog:', await postHogResponse.text());
+  }
+
+  // Format output menjadi text/plain untuk response asli
   const formattedResponse = Object.entries(data)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
 
-  // Return response dengan format teks
   return new Response(formattedResponse, {
     headers: { 'Content-Type': 'text/plain' },
   });
