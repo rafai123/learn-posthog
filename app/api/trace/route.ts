@@ -1,21 +1,44 @@
 export async function GET(request: Request): Promise<Response> {
-  const ip = request.headers.get("x-forwarded-for") || request.headers.get("host") || "unknown"
-  const userAgent = request.headers.get("user-agent") || "unknown"
-  const protocol = request.headers.get("x-forwarded-proto") || "http"
+  const ip =
+    request.headers.get('x-forwarded-for') || 
+    request.headers.get('host') || 
+    'unknown';
+  
+  // Dapatkan IP pengguna dari request
+  const ipAddress = ip.split(',')[0]; // Handle jika ada proxy atau beberapa IP
 
-  const data: Record<string, string> = {
-    ip, 
-    host: request.headers.get("host") || "unknown",
-    user_agent: userAgent,
-    protocol,
-    method: "GET" 
+  // Gunakan layanan GeoIP eksternal untuk mendapatkan lokasi berdasarkan IP
+  const geoIpResponse = await fetch(`https://geo.ipify.org/api/v2/country?apiKey=at_14xtTQJXufoRX2RREmSNUWDGQuhQZ&ipAddress=${ipAddress}`);
+  
+  if (!geoIpResponse.ok) {
+    return new Response('Error fetching GeoIP data', { status: 500 });
   }
+  
+  const geoData = await geoIpResponse.json();
 
+  // Ambil data GeoIP
+  const { city, region, country, loc } = geoData;
+  
+  // Format response yang ingin ditampilkan
+  const data = {
+    ip: ipAddress,
+    city: city || 'unknown',
+    region: region || 'unknown',
+    country: country || 'unknown',
+    location: loc || 'unknown',
+    host: request.headers.get('host') || 'unknown',
+    user_agent: request.headers.get('user-agent') || 'unknown',
+    protocol: request.headers.get('x-forwarded-proto') || 'http',
+    method: 'GET',
+  };
+
+  // Format output menjadi text/plain
   const formattedResponse = Object.entries(data)
     .map(([key, value]) => `${key}=${value}`)
-    .join('\n')
+    .join('\n');
 
+  // Return response dengan format teks
   return new Response(formattedResponse, {
-    headers: {'Content-Type': "text/plain"}
-  })
+    headers: { 'Content-Type': 'text/plain' },
+  });
 }
