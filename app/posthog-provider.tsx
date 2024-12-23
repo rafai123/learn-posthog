@@ -10,6 +10,7 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
       person_profiles: "identified_only",
       capture_pageview: false,
       capture_pageleave: true, 
+      autocapture: true,
     });
   }, []);
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;

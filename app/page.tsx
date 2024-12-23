@@ -16,7 +16,7 @@ export default function Home() {
   const utm_term = searchParams.get("utm_term")
 
   useEffect(() => {
-    const trackAdVisit = () => {
+    const trackAdVisit = async () => {
 
       if (utm_source || utm_medium || utm_campaign || utm_term) {
         // from ad
@@ -40,6 +40,21 @@ export default function Home() {
         // from organic
         posthog.register({visitor_type: "normal"})
         posthog.capture("Normal Visit")
+      }
+
+       // Fetch GeoIP and register user location
+      try {
+        const response = await fetch('/api/trace'); // Endpoint untuk mendapatkan GeoIP data
+        const geoData = await response.json();
+        posthog.register({
+          city: geoData.city || 'unknown',
+          region: geoData.region || 'unknown',
+          country: geoData.country || 'unknown',
+          location: geoData.location || 'unknown',
+        });
+        posthog.capture('User GeoIP Data', geoData);
+      } catch (error) {
+        console.error('Failed to fetch GeoIP data', error);
       }
     }
 
