@@ -1,44 +1,42 @@
+import geoip from 'geoip-lite';
+
 export async function GET(request: Request): Promise<Response> {
+  // Ambil IP address pengguna dari headers
   const ip =
-    request.headers.get('x-forwarded-for') || 
-    request.headers.get('host') || 
+    request.headers.get('x-forwarded-for') || // Cek jika ada header x-forwarded-for
+    request.headers.get('host') || // Atau fallback ke host
     'unknown';
-  
-  // Dapatkan IP pengguna dari request
-  const ipAddress = ip.split(',')[0]; // Handle jika ada proxy atau beberapa IP
 
-  // Gunakan layanan GeoIP eksternal untuk mendapatkan lokasi berdasarkan IP
-  const geoIpResponse = await fetch(`https://geo.ipify.org/api/v2/country?apiKey=at_14xtTQJXufoRX2RREmSNUWDGQuhQZ&ipAddress=${ipAddress}`);
-  
-  if (!geoIpResponse.ok) {
-    return new Response('Error fetching GeoIP data', { status: 500 });
+  // Ambil lokasi berdasarkan IP
+  const geo = geoip.lookup(ip.split(',')[0]); // Mengambil IP pertama jika ada proxy
+
+  // Jika data GeoIP tersedia
+  if (geo) {
+    const { city, region, country, ll } = geo; // Mendapatkan kota, region, negara, dan koordinat
+    
+    // Format data untuk ditampilkan
+    const data = {
+      ip: ip.split(',')[0],
+      city: city || 'unknown',
+      region: region || 'unknown',
+      country: country || 'unknown',
+      location: ll ? `${ll[0]}, ${ll[1]}` : 'unknown', // Koordinat latitude dan longitude
+      host: request.headers.get('host') || 'unknown',
+      user_agent: request.headers.get('user-agent') || 'unknown',
+      protocol: request.headers.get('x-forwarded-proto') || 'http',
+      method: 'GET',
+    };
+
+    // Format output menjadi text/plain
+    const formattedResponse = Object.entries(data)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
+
+    return new Response(formattedResponse, {
+      headers: { 'Content-Type': 'text/plain' },
+    });
   }
-  
-  const geoData = await geoIpResponse.json();
 
-  // Ambil data GeoIP
-  const { city, region, country, loc } = geoData;
-  
-  // Format response yang ingin ditampilkan
-  const data = {
-    ip: ipAddress,
-    city: city || 'unknown',
-    region: region || 'unknown',
-    country: country || 'unknown',
-    location: loc || 'unknown',
-    host: request.headers.get('host') || 'unknown',
-    user_agent: request.headers.get('user-agent') || 'unknown',
-    protocol: request.headers.get('x-forwarded-proto') || 'http',
-    method: 'GET',
-  };
-
-  // Format output menjadi text/plain
-  const formattedResponse = Object.entries(data)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('\n');
-
-  // Return response dengan format teks
-  return new Response(formattedResponse, {
-    headers: { 'Content-Type': 'text/plain' },
-  });
+  // Jika tidak ada data GeoIP
+  return new Response('GeoIP data not found', { status: 404 });
 }

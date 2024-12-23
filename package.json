@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/geoip-lite": "^1.4.4",
+    "geoip-lite": "^1.4.10",
     "next": "15.0.2",
     "posthog-js": "^1.181.0",
     "posthog-node": "^4.2.1",
